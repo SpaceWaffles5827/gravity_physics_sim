@@ -7,8 +7,9 @@ using namespace sf;
 
 int screenWidth = 1280*2;
 int screenHeight = 720*2;
-static int planetCount = 10;
-bool breakLoop = false;
+static int planetCount = 400;
+
+
 
 class Planet : public CircleShape
 {
@@ -44,6 +45,19 @@ class Planet : public CircleShape
             velocity = Vector2f(xVelocity, yVelocity);
         }
 
+        void setVelocity(float xVelocity, float yVelocity)
+        {
+            this->xVelocity = xVelocity;
+            this->yVelocity = yVelocity;
+            velocity = Vector2f(xVelocity, yVelocity);
+        }
+
+        void setRadius(float radius)
+        {
+            this->CircleShape::setRadius(radius);
+            this->setOrigin(getRadius(), getRadius());
+        }
+
         void updateVelocity(Planet solarSystem[], float deltaTime)
         {
 
@@ -77,8 +91,17 @@ class Planet : public CircleShape
             velocityVector[1].color = Color::Red;
         }
 
+        void setMass(float mass)
+        {
+            this->mass = mass;
+        }
 
     private:
+
+        void setRandonPosition()
+        {
+            this->setPosition(rand() % screenWidth, rand() % screenHeight);
+        }
 
         float getCurentSpeed()
         {
@@ -111,12 +134,6 @@ class Planet : public CircleShape
             }
             else
             {
-                // if(!breakLoop)
-                // {
-                //     cout << "Collision planet1" << toString() << endl;
-                //     cout << "Collision planet2" << planet.toString() << endl;
-                // }
-
                 if(distanceBetween(*this, planet) < this->getRadius() + planet.getRadius())
                 {
                     float distance = distanceBetween(*this, planet);
@@ -126,28 +143,32 @@ class Planet : public CircleShape
                     this->setPosition(getPosition().x + overlap * cos(angle), getPosition().y + overlap * sin(angle));
                 }
 
-                float Planet1xVelocity = (xVelocity - ((2* planet.mass / (mass + planet.mass)) * (((xVelocity - planet.xVelocity)*(getPosition().x - planet.getPosition().x)) / ((getPosition().x - planet.getPosition().x)*(getPosition().x - planet.getPosition().x))) * (getPosition().x - planet.getPosition().x)));
-                float Planet1yVelocity = (yVelocity - ((2* planet.mass / (mass + planet.mass)) * (((yVelocity - planet.yVelocity)*(getPosition().y - planet.getPosition().y)) / ((getPosition().y - planet.getPosition().y)*(getPosition().y - planet.getPosition().y))) * (getPosition().y - planet.getPosition().y)));
+                float Planet1xVelocity = (xVelocity - ((2 * planet.mass / (mass + planet.mass)) * ((((xVelocity - planet.xVelocity) * (getPosition().x - planet.getPosition().x)) + ((yVelocity - planet.yVelocity) * (getPosition().y - planet.getPosition().y))) / (distanceBetween(*this,planet) * distanceBetween(*this,planet))) * (getPosition().x - planet.getPosition().x)));
+                float Planet1yVelocity = (yVelocity - ((2 * planet.mass / (mass + planet.mass)) * ((((xVelocity - planet.xVelocity) * (getPosition().x - planet.getPosition().x)) + ((yVelocity - planet.yVelocity) * (getPosition().y - planet.getPosition().y))) / (distanceBetween(*this,planet) * distanceBetween(*this,planet))) * (getPosition().y - planet.getPosition().y)));
 
-                float Planet2xVelocity = (planet.xVelocity - ((2* mass / (mass + planet.mass)) * (((planet.xVelocity - xVelocity)*(planet.getPosition().x - getPosition().x)) / ((planet.getPosition().x - getPosition().x)*(planet.getPosition().x - getPosition().x))) * (planet.getPosition().x - getPosition().x)));
-                float Planet2yVelocity = (planet.yVelocity - ((2* mass / (mass + planet.mass)) * (((planet.yVelocity - yVelocity)*(planet.getPosition().y - getPosition().y)) / ((planet.getPosition().y - getPosition().y)*(planet.getPosition().y - getPosition().y))) * (planet.getPosition().y - getPosition().y)));
-
-                //if the absolute velocity is over 500 of any of the planets x or y print the planet
-                if(abs(Planet1xVelocity) > 500 || abs(Planet1yVelocity) > 500 || abs(Planet2xVelocity) > 500 || abs(Planet2yVelocity) > 500)
-                {
-                    cout << "Planet1: " << toString() << endl;
-                    cout << "Planet2: " << planet.toString() << endl;
-                }
-
+                float Planet2xVelocity = (planet.xVelocity - ((2 * mass / (mass + planet.mass)) * ((((planet.xVelocity - xVelocity) * (planet.getPosition().x - getPosition().x)) + ((planet.yVelocity - yVelocity) * (planet.getPosition().y - getPosition().y))) / (distanceBetween(*this,planet) * distanceBetween(*this,planet))) * (planet.getPosition().x - getPosition().x)));
+                float Planet2yVelocity = (planet.yVelocity - ((2 * mass / (mass + planet.mass)) * ((((planet.xVelocity - xVelocity) * (planet.getPosition().x - getPosition().x)) + ((planet.yVelocity - yVelocity) * (planet.getPosition().y - getPosition().y))) / (distanceBetween(*this,planet) * distanceBetween(*this,planet))) * (planet.getPosition().y - getPosition().y)));
 
                 if(isnan(Planet1xVelocity))
+                {
+                    cout << "Planet1xVelocity is nan" << endl;
                     Planet1xVelocity = 0;
+                }
                 if(isnan(Planet1yVelocity))
+                {
+                    cout << "Planet1yVelocity is nan" << endl;
                     Planet1yVelocity = 0;
+                }
                 if(isnan(Planet2xVelocity))
+                {
+                    cout << "Planet2xVelocity is nan" << endl;
                     Planet2xVelocity = 0;
+                }
                 if(isnan(Planet2yVelocity))
+                {
+                    cout << "Planet2yVelocity is nan" << endl;
                     Planet2yVelocity = 0;
+                }
 
                 xVelocity = Planet1xVelocity;
                 yVelocity = Planet1yVelocity;
@@ -155,15 +176,9 @@ class Planet : public CircleShape
                 planet.xVelocity = Planet2xVelocity;
                 planet.yVelocity = Planet2yVelocity;
 
-                // if(!breakLoop)
-                // {
-                //     breakLoop = true;
-                //     cout << "New planet1 velocity: " << xVelocity << " " << yVelocity << endl;
-                //     cout << "New planet2 velocity: " << planet.xVelocity << " " << planet.yVelocity << endl;
-                // }
-
                 return true;
             }
+            return false;
         }
 
         bool updateVelocityDueToWindowBounds()
@@ -257,18 +272,426 @@ int main()
     float speed = 0;
     RenderWindow window(VideoMode(screenWidth, screenHeight), "SIM");
 
-    Planet solarSystem [] = {Planet(50,1000000,((screenWidth / 2)-1000),(screenHeight / 2),-50,0, Color::Blue), 
-                             Planet(50,1000000,((screenWidth / 2)-800),(screenHeight / 2),50,0, Color::White),
-                             Planet(50,1000000,((screenWidth / 2)-600),(screenHeight / 2),0,50, Color::Red),
-                             Planet(50,1000000,((screenWidth / 2)-400),(screenHeight / 2),0,-50, Color::Green),
-                             Planet(50,1000000,((screenWidth / 2)-200),(screenHeight / 2),50,0, Color::Yellow),
-                             Planet(50,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Magenta),
-                             Planet(50,1000000,((screenWidth / 2)+200),(screenHeight / 2),0,50, Color::Cyan),
-                             Planet(50,1000000,((screenWidth / 2)+400),(screenHeight / 2),0,-50, Color::Blue),
-                             Planet(50,1000000,((screenWidth / 2)+600),(screenHeight / 2),50,0, Color::White),
-                             Planet(50,1000000,((screenWidth / 2)+800),(screenHeight / 2),0,50, Color::Red),};
+    Planet solarSystem [] = {Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,-50, Color::Black),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,50, Color::Yellow),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,-50, Color::Magenta),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,50, Color::Cyan),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),50,0, Color::Blue),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::White),
+                             Planet(25,1000000,((screenWidth / 2)),(screenHeight / 2),0,50, Color::Red),
 
-    //Planet(50,50,((screenWidth / 8)*7),(screenHeight / 2),0,50, Color::Red)
+                             };
+
+
+    // Planet solarSystem [] = {Planet(25,1000000,((screenWidth / 2)),((screenHeight / 2)+25),0,0, Color::Blue), 
+    //                          Planet(25,1000000,((screenWidth / 2)+500),((screenHeight / 2)),-50,0, Color::Red),
+    //                          };
+
+
+    //for each planet in the solar system set random position
+    for(int i = 0; i < planetCount; i++)
+    {
+        // solarSystem[i].setMass(5000000);
+        //set starting velocity to 0
+        solarSystem[i].setVelocity(0,0);
+
+        solarSystem[i].setMass(1000);
+        solarSystem[i].setRadius(5);
+        solarSystem[i].setPosition(rand() % screenWidth, rand() % screenHeight);
+    }
 
     Clock clock;
 
@@ -291,6 +714,8 @@ int main()
         float deletaTime = clock.restart().asSeconds();
         float fps = 1 / deletaTime;
 
+        cout << "FPS: " << fps << endl;
+
         window.clear();
 
         for(int i = 0; i < planetCount; i++)
@@ -304,7 +729,7 @@ int main()
             window.draw(solarSystem[i]);
         }
 
-        // window.draw(solarSystem[5].velocityVector, 2, Lines);
+        // window.draw(solarSystem[0].velocityVector, 2, Lines);
         // window.draw(solarSystem[1].velocityVector, 2, Lines);
 
         window.display();
