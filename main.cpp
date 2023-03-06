@@ -7,7 +7,7 @@ using namespace sf;
 
 int screenWidth = 1280*2;
 int screenHeight = 720*2;
-static int planetCount = 4;
+static int planetCount = 10;
 bool breakLoop = false;
 
 class Planet : public CircleShape
@@ -16,6 +16,9 @@ class Planet : public CircleShape
         float mass;
         float xVelocity;
         float yVelocity;
+
+        Vector2f velocity;
+
         float speed;
         Vertex velocityVector[2];
 
@@ -25,6 +28,7 @@ class Planet : public CircleShape
             mass = 0;
             xVelocity = 0;
             yVelocity = 0;
+            velocity = Vector2f(0, 0);
         }
 
         Planet(float radious, float mass, float xPos, float yPos, float xVelocity, float yVelocity, Color color)
@@ -37,6 +41,7 @@ class Planet : public CircleShape
             this->setFillColor(color);
             this->setOrigin(getRadius(), getRadius());
             this->setFillColor(color);
+            velocity = Vector2f(xVelocity, yVelocity);
         }
 
         void updateVelocity(Planet solarSystem[], float deltaTime)
@@ -100,25 +105,41 @@ class Planet : public CircleShape
 
         bool updateVelocityDueToPlanetCollision(Planet &planet, float deltaTime)
         {
-            if(distanceBetween(*this, planet) > this->getRadius() + planet.getRadius())
+            if(distanceBetween(*this, planet) >= this->getRadius() + planet.getRadius())
             {
                 return false;
             }
             else
             {
-                if(!breakLoop)
+                // if(!breakLoop)
+                // {
+                //     cout << "Collision planet1" << toString() << endl;
+                //     cout << "Collision planet2" << planet.toString() << endl;
+                // }
+
+                if(distanceBetween(*this, planet) < this->getRadius() + planet.getRadius())
                 {
-                    cout << "Collision planet1" << toString() << endl;
-                    cout << "Collision planet2" << planet.toString() << endl;
+                    float distance = distanceBetween(*this, planet);
+                    float overlap = this->getRadius() + planet.getRadius() - distance;
+                    float angle = angleBetweenRadians(*this, planet);
+
+                    this->setPosition(getPosition().x + overlap * cos(angle), getPosition().y + overlap * sin(angle));
                 }
 
                 float Planet1xVelocity = (xVelocity - ((2* planet.mass / (mass + planet.mass)) * (((xVelocity - planet.xVelocity)*(getPosition().x - planet.getPosition().x)) / ((getPosition().x - planet.getPosition().x)*(getPosition().x - planet.getPosition().x))) * (getPosition().x - planet.getPosition().x)));
                 float Planet1yVelocity = (yVelocity - ((2* planet.mass / (mass + planet.mass)) * (((yVelocity - planet.yVelocity)*(getPosition().y - planet.getPosition().y)) / ((getPosition().y - planet.getPosition().y)*(getPosition().y - planet.getPosition().y))) * (getPosition().y - planet.getPosition().y)));
 
                 float Planet2xVelocity = (planet.xVelocity - ((2* mass / (mass + planet.mass)) * (((planet.xVelocity - xVelocity)*(planet.getPosition().x - getPosition().x)) / ((planet.getPosition().x - getPosition().x)*(planet.getPosition().x - getPosition().x))) * (planet.getPosition().x - getPosition().x)));
-                float Planet2yVelocity = (planet.yVelocity - ((2* mass / (mass + planet.mass)) * (((planet.yVelocity - yVelocity)*(planet.getPosition().y - getPosition().y)) / ((planet.getPosition().x - getPosition().x)*(planet.getPosition().x - getPosition().x))) * (planet.getPosition().y - getPosition().y)));
+                float Planet2yVelocity = (planet.yVelocity - ((2* mass / (mass + planet.mass)) * (((planet.yVelocity - yVelocity)*(planet.getPosition().y - getPosition().y)) / ((planet.getPosition().y - getPosition().y)*(planet.getPosition().y - getPosition().y))) * (planet.getPosition().y - getPosition().y)));
 
-                //if any of the values are NaN, set them to 0
+                //if the absolute velocity is over 500 of any of the planets x or y print the planet
+                if(abs(Planet1xVelocity) > 500 || abs(Planet1yVelocity) > 500 || abs(Planet2xVelocity) > 500 || abs(Planet2yVelocity) > 500)
+                {
+                    cout << "Planet1: " << toString() << endl;
+                    cout << "Planet2: " << planet.toString() << endl;
+                }
+
+
                 if(isnan(Planet1xVelocity))
                     Planet1xVelocity = 0;
                 if(isnan(Planet1yVelocity))
@@ -134,12 +155,12 @@ class Planet : public CircleShape
                 planet.xVelocity = Planet2xVelocity;
                 planet.yVelocity = Planet2yVelocity;
 
-                if(!breakLoop)
-                {
-                    breakLoop = true;
-                    cout << "New planet1 velocity: " << xVelocity << " " << yVelocity << endl;
-                    cout << "New planet2 velocity: " << planet.xVelocity << " " << planet.yVelocity << endl;
-                }
+                // if(!breakLoop)
+                // {
+                //     breakLoop = true;
+                //     cout << "New planet1 velocity: " << xVelocity << " " << yVelocity << endl;
+                //     cout << "New planet2 velocity: " << planet.xVelocity << " " << planet.yVelocity << endl;
+                // }
 
                 return true;
             }
@@ -149,26 +170,29 @@ class Planet : public CircleShape
         {
             if(getPosition().x + getRadius() > screenWidth)
             {
+                this->setPosition(screenWidth - getRadius(), getPosition().y);
                 xVelocity = -xVelocity;
                 return true;
             }
             if(getPosition().x - getRadius() < 0)
             {
+                this->setPosition(getRadius(), getPosition().y);
                 xVelocity = -xVelocity;
                 return true;
             }
             if(getPosition().y + getRadius() > screenHeight)
             {
+                this->setPosition(getPosition().x, screenHeight - getRadius());
                 yVelocity = -yVelocity;
                 return true;
             }
             if(getPosition().y - getRadius() < 0)
             {
+                this->setPosition(getPosition().x, getRadius());
                 yVelocity = -yVelocity;
                 return true;
             }
             return false;
-            
         }
 
         float distanceBetween(Planet &a, Planet &b)
@@ -233,10 +257,16 @@ int main()
     float speed = 0;
     RenderWindow window(VideoMode(screenWidth, screenHeight), "SIM");
 
-    Planet solarSystem [] = {Planet(50,1000000,((screenWidth / 8)*5),(screenHeight / 2),-50,0, Color::Blue), 
-                             Planet(50,1000000,((screenWidth / 8)*3),(screenHeight / 2),50,0, Color::White),
-                             Planet(50,1000000,((screenWidth / 8)*7),(screenHeight / 2),0,50, Color::Red),
-                             Planet(50,1000000,((screenWidth / 8)*1),(screenHeight / 2),0,-50, Color::Green),};
+    Planet solarSystem [] = {Planet(50,1000000,((screenWidth / 2)-1000),(screenHeight / 2),-50,0, Color::Blue), 
+                             Planet(50,1000000,((screenWidth / 2)-800),(screenHeight / 2),50,0, Color::White),
+                             Planet(50,1000000,((screenWidth / 2)-600),(screenHeight / 2),0,50, Color::Red),
+                             Planet(50,1000000,((screenWidth / 2)-400),(screenHeight / 2),0,-50, Color::Green),
+                             Planet(50,1000000,((screenWidth / 2)-200),(screenHeight / 2),50,0, Color::Yellow),
+                             Planet(50,1000000,((screenWidth / 2)),(screenHeight / 2),-50,0, Color::Magenta),
+                             Planet(50,1000000,((screenWidth / 2)+200),(screenHeight / 2),0,50, Color::Cyan),
+                             Planet(50,1000000,((screenWidth / 2)+400),(screenHeight / 2),0,-50, Color::Blue),
+                             Planet(50,1000000,((screenWidth / 2)+600),(screenHeight / 2),50,0, Color::White),
+                             Planet(50,1000000,((screenWidth / 2)+800),(screenHeight / 2),0,50, Color::Red),};
 
     //Planet(50,50,((screenWidth / 8)*7),(screenHeight / 2),0,50, Color::Red)
 
@@ -274,8 +304,7 @@ int main()
             window.draw(solarSystem[i]);
         }
 
-
-        // window.draw(solarSystem[0].velocityVector, 2, Lines);
+        // window.draw(solarSystem[5].velocityVector, 2, Lines);
         // window.draw(solarSystem[1].velocityVector, 2, Lines);
 
         window.display();
