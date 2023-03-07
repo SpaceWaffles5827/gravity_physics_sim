@@ -68,8 +68,8 @@ class Planet : public CircleShape
                 if(*this == planets[i])
                     continue;
                 
-                updateVelocityDueToPlanetCollision(planets[i], deltaTime);
-                updateVelocityDueToGravity(planets[i], deltaTime);
+                // updateVelocityDueToPlanetCollision(planets[i], deltaTime);
+                // updateVelocityDueToGravity(planets[i], deltaTime);
             }
 
             updateVelocityDueToWindowBounds();
@@ -96,6 +96,21 @@ class Planet : public CircleShape
         void setMass(float mass)
         {
             this->mass = mass;
+        }
+
+        string toString()
+        {
+            string output = "Planet: ";
+            output += "x: " + to_string(getPosition().x) + " y: " + to_string(getPosition().y) + " xVelocity: " + to_string(xVelocity) + " yVelocity: " + to_string(yVelocity) + " speed: " + to_string(getCurentSpeed()) + " mass: " + to_string(mass) + " radius: " + to_string(getRadius());
+            return output;
+        }
+
+        float distanceBetween(Planet &a, Planet &b)
+        {
+            float x = a.getPosition().x - b.getPosition().x;
+            float y = a.getPosition().y - b.getPosition().y;
+
+            return sqrt(x * x + y * y);
         }
 
     private:
@@ -211,14 +226,6 @@ class Planet : public CircleShape
             return false;
         }
 
-        float distanceBetween(Planet &a, Planet &b)
-        {
-            float x = a.getPosition().x - b.getPosition().x;
-            float y = a.getPosition().y - b.getPosition().y;
-
-            return sqrt(x * x + y * y);
-        }
-
         float forceBetween(Planet &a, Planet &b)
         {
             float distance = distanceBetween(a, b);
@@ -257,13 +264,6 @@ class Planet : public CircleShape
             return angle;
         }
 
-        string toString()
-        {
-            string output = "Planet: ";
-            output += "x: " + to_string(getPosition().x) + " y: " + to_string(getPosition().y) + " xVelocity: " + to_string(xVelocity) + " yVelocity: " + to_string(yVelocity) + " speed: " + to_string(getCurentSpeed()) + " mass: " + to_string(mass) + " radius: " + to_string(getRadius());
-            return output;
-        }
-
 };
 
 
@@ -274,6 +274,14 @@ class solarSystem
         Planet* planets; 
 
     public:
+
+
+
+
+        int getRadius(int i)
+        {
+            return planets[i].getRadius();
+        }
 
         solarSystem()
         {
@@ -380,6 +388,57 @@ class singleGrid
         int col;
         vector<Planet> planets;
 
+        singleGrid()
+        {
+            this->row = 0;
+            this->col = 0;
+            this->planets = vector<Planet>();
+        }
+
+        singleGrid(int row, int col)
+        {
+            this->row = row;
+            this->col = col;
+            this->planets = vector<Planet>();
+        }
+
+        void updateVelocityAndMove(float deletaTime)
+        {
+            for(int i = 0; i < planets.size(); i++)
+            {
+                planets[i].setFillColor(Color::Red);
+            }
+        }
+
+        void checkForColsion()
+        {
+            for(int i = 0; i < planets.size(); i++)
+            {
+                for(int j = i + 1; j < planets.size(); j++)
+                {
+                    if(planets[i].distanceBetween(planets[i], planets[j]) < planets[i].getRadius() + planets[j].getRadius())
+                    {
+                        planets[i].setFillColor(Color::Red);
+                        planets[j].setFillColor(Color::Red);
+                    }
+                }
+            }
+        }
+
+        void addPlanet(Planet planet)
+        {
+            planets.push_back(planet);
+        }
+
+        void setPlanetsRed()
+        {
+            for(int i = 0; i < planets.size(); i++)
+            {
+                planets[i].setFillColor(Color::Red);
+            }
+        }
+
+
         string toString()
         {
             string output = "Grid: ";
@@ -399,41 +458,59 @@ class uniformGrid
         {
             this->totalRow = 2;
             this->totalCol = 2;
+            this->grids = vector<singleGrid>((totalRow * totalCol));
         }
 
         uniformGrid(int totalRow, int totalCol)
         {
             this->totalRow = totalRow;
             this->totalCol = totalCol;
+            this->grids = vector<singleGrid>((totalRow * totalCol));
+        }
+
+        void wipdeGrids()
+        {
+            for(int i = 0; i < grids.size(); i++)
+            {
+                grids[i].planets.clear();
+            }
         }
 
         void fillWithPlanets(solarSystem solarSystem)
         {
+            wipdeGrids();
+
             for(int i = 0; solarSystem.getNumberOfPlanets() > i; i++)
             {
-                // cout << solarSystem.getPlanet(i).getPosition().x << endl;
-
                 int corispodingRow = solarSystem.getPlanet(i).getPosition().x / (screenWidth/totalRow);
+                int corispodingCol = solarSystem.getPlanet(i).getPosition().y / (screenHeight/totalCol);
 
-                if(corispodingRow == 0)
+                int corispodingRowLeft = (solarSystem.getPlanet(i).getPosition().x - solarSystem.getRadius(i)) / (screenWidth/totalRow);
+                int corispodingColTop = (solarSystem.getPlanet(i).getPosition().y - solarSystem.getRadius(i)) / (screenHeight/totalCol);
+
+                int corispodingRowRight = (solarSystem.getPlanet(i).getPosition().x + solarSystem.getRadius(i)) / (screenWidth/totalRow);
+                int corispodingColBottom = (solarSystem.getPlanet(i).getPosition().y + solarSystem.getRadius(i)) / (screenHeight/totalCol);
+
+                int corispodingIndex = corispodingRow * totalCol + corispodingCol;
+
+                grids[corispodingIndex].planets.push_back(solarSystem.getPlanet(i));
+
+                if(corispodingRowLeft != corispodingRow && corispodingRowLeft > 0)
                 {
-                    solarSystem.setColor(i,Color(255,0,0));
+                    grids[corispodingRowLeft].planets.push_back(solarSystem.getPlanet(i));
                 }
-                if(corispodingRow == 1)
+                if(corispodingColTop != corispodingCol && corispodingColTop > 0)
                 {
-                    solarSystem.setColor(i,Color(0,255,0));
+                    grids[corispodingColTop].planets.push_back(solarSystem.getPlanet(i));
                 }
-                if(corispodingRow == 2)
+                if(corispodingRowRight != corispodingRow && corispodingRowRight < totalRow)
                 {
-                    solarSystem.setColor(i,Color(0,0,255));
+                    grids[corispodingRowRight].planets.push_back(solarSystem.getPlanet(i));
                 }
-
-                cout << corispodingRow << endl;
-
-
-                // cout << solarSystem.getPlanet(i).getPosition().y << endl;
-
-
+                if(corispodingColBottom != corispodingCol && corispodingColBottom < totalCol)
+                {
+                    grids[corispodingColBottom].planets.push_back(solarSystem.getPlanet(i));
+                }
             }
         }
 
@@ -457,15 +534,7 @@ int main()
     solarSystem.setMassOfAllPlanets(10000);
     // solarSystem.RandomizeSizes(5, 25);
 
-    vector<int> list_name;
-
-    list_name.push_back(1);
-    list_name.push_back(2);
-
-
-    cout << list_name.size() << endl;
-
-
+    uniformGrid.fillWithPlanets(solarSystem);
 
     RenderWindow window(VideoMode(screenWidth, screenHeight), "SIM");
 
@@ -495,11 +564,15 @@ int main()
 
         uniformGrid.fillWithPlanets(solarSystem);
 
+
+        uniformGrid.grids[0].updateVelocityAndMove(deletaTime);
+
+
         solarSystem.updateVelocityAndMove(deletaTime);
+
+
         window.clear();
         solarSystem.drawEveryPlanet(window);
-
-        // window.draw(solarSystem.getPlanet(0).velocityVector, 2, Lines);
 
         window.display();
     }
