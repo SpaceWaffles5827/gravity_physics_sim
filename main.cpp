@@ -236,40 +236,49 @@ class UniformGrid
 
                 grid[corispodingIndex].planets.push_back(&planets[i]);
 
-                //add planet to all overlapping squares as well
+                //add planet to all overlapping squares as well dont include the original square or the squares that dont exist/ are out of bounds
+                if(corispodingRowLeft != corispodingRow && corispodingRowLeft >= 0 && corispodingRowLeft < rows)
+                {
+                    int corispodingIndexLeft = corispodingRowLeft + corispodingCol * rows;
+                    grid[corispodingIndexLeft].planets.push_back(&planets[i]);
+                }
+                if(corispodingColTop != corispodingCol && corispodingColTop >= 0 && corispodingColTop < columns)
+                {
+                    int corispodingIndexTop = corispodingRow + corispodingColTop * rows;
+                    grid[corispodingIndexTop].planets.push_back(&planets[i]);
+                }
+                if(corispodingRowRight != corispodingRow && corispodingRowRight >= 0 && corispodingRowRight < rows)
+                {
+                    int corispodingIndexRight = corispodingRowRight + corispodingCol * rows;
+                    grid[corispodingIndexRight].planets.push_back(&planets[i]);
+                }
+                if(corispodingColBottom != corispodingCol && corispodingColBottom >= 0 && corispodingColBottom < columns)
+                {
+                    int corispodingIndexBottom = corispodingRow + corispodingColBottom * rows;
+                    grid[corispodingIndexBottom].planets.push_back(&planets[i]);
+                }
+                if(corispodingRowLeft != corispodingRow && corispodingRowLeft >= 0 && corispodingRowLeft < rows && corispodingColTop != corispodingCol && corispodingColTop >= 0 && corispodingColTop < columns)
+                {
+                    int corispodingIndexTopLeft = corispodingRowLeft + corispodingColTop * rows;
+                    grid[corispodingIndexTopLeft].planets.push_back(&planets[i]);
+                }
+                if(corispodingRowRight != corispodingRow && corispodingRowRight >= 0 && corispodingRowRight < rows && corispodingColTop != corispodingCol && corispodingColTop >= 0 && corispodingColTop < columns)
+                {
+                    int corispodingIndexTopRight = corispodingRowRight + corispodingColTop * rows;
+                    grid[corispodingIndexTopRight].planets.push_back(&planets[i]);
+                }
+                if(corispodingRowLeft != corispodingRow && corispodingRowLeft >= 0 && corispodingRowLeft < rows && corispodingColBottom != corispodingCol && corispodingColBottom >= 0 && corispodingColBottom < columns)
+                {
+                    int corispodingIndexBottomLeft = corispodingRowLeft + corispodingColBottom * rows;
+                    grid[corispodingIndexBottomLeft].planets.push_back(&planets[i]);
+                }
+                if(corispodingRowRight != corispodingRow && corispodingRowRight >= 0 && corispodingRowRight < rows && corispodingColBottom != corispodingCol && corispodingColBottom >= 0 && corispodingColBottom < columns)
+                {
+                    int corispodingIndexBottomRight = corispodingRowRight + corispodingColBottom * rows;
+                    grid[corispodingIndexBottomRight].planets.push_back(&planets[i]);
+                }
 
-                if(corispodingRowLeft != corispodingRow)
-                {
-                    grid[corispodingRowLeft + corispodingCol * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingColTop != corispodingCol)
-                {
-                    grid[corispodingRow + corispodingColTop * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingRowRight != corispodingRow)
-                {
-                    grid[corispodingRowRight + corispodingCol * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingColBottom != corispodingCol)
-                {
-                    grid[corispodingRow + corispodingColBottom * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingRowLeft != corispodingRow && corispodingColTop != corispodingCol)
-                {
-                    grid[corispodingRowLeft + corispodingColTop * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingRowRight != corispodingRow && corispodingColTop != corispodingCol)
-                {
-                    grid[corispodingRowRight + corispodingColTop * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingRowLeft != corispodingRow && corispodingColBottom != corispodingCol)
-                {
-                    grid[corispodingRowLeft + corispodingColBottom * rows].planets.push_back(&planets[i]);
-                }
-                if(corispodingRowRight != corispodingRow && corispodingColBottom != corispodingCol)
-                {
-                    grid[corispodingRowRight + corispodingColBottom * rows].planets.push_back(&planets[i]);
-                }
+
 
 
             }
@@ -504,12 +513,12 @@ class SolarSystem
 
 int main()
 {
-    SolarSystem solarSystem(10);
+    SolarSystem solarSystem(100);
 
-    solarSystem.setRadiusOfallPlanets(25);
+    solarSystem.setRadiusOfallPlanets(15);
     solarSystem.randomizePositionOfPlnats();
     solarSystem.setPlanetsRandomColor();
-    solarSystem.setMassOfAllPlanets(1000000);
+    solarSystem.setMassOfAllPlanets(1000);
     UniformGrid UniformGrid(3,3);
     RenderWindow window(VideoMode(screenWidth, screenHeight), "SIM");
 
@@ -540,8 +549,6 @@ int main()
         
         solarSystem.updateAllForcees(deltaTime, UniformGrid);
         solarSystem.updatePlanetsPosition(deltaTime);
-
-        // cout << "planet 0: " << solarSystem.planets[0].toString() << endl;        
 
         window.clear();
         UniformGrid.draw(window);
