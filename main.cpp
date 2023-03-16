@@ -11,8 +11,8 @@
 using namespace std;
 using namespace sf;
 
-int screenWidth = 2560;
-int screenHeight = 1440;
+int screenWidth = 1280;
+int screenHeight = 720;
 
 struct VelocityVector
 {
@@ -299,6 +299,8 @@ class UniformGrid
         }
 };
 
+
+
 class SolarSystem
 {
     public:
@@ -380,7 +382,13 @@ class SolarSystem
         void updateAllForcees(float deltaTime,UniformGrid UniformGrid)
         {
             checkForPlanetColisions(UniformGrid);
-            // checkForPlanetColisions(); 
+            updateForcesDueToGravity(deltaTime);
+            updateForcesDueToWindowEdges();
+        }
+
+        void updateAllForcees(float deltaTime)
+        {
+            checkForPlanetColisions(); 
             updateForcesDueToGravity(deltaTime);
             updateForcesDueToWindowEdges();
         }
@@ -510,17 +518,244 @@ class SolarSystem
 };
 
 
+class QuadTree
+{
+public:
+    QuadTree *northWest;
+    QuadTree *northEast;
+    QuadTree *southWest;
+    QuadTree *southEast;
+
+    vector <Planet*> points;
+
+    int MaxPoints;
+    bool divided;
+
+    int x;
+    int y;
+    int width;
+    int height;
+
+    QuadTree()
+    {
+        northWest = nullptr;
+        northEast = nullptr;
+        southWest = nullptr;
+        southEast = nullptr;
+        MaxPoints = 3;
+        divided = false;
+    }
+
+    QuadTree(int x, int y, int width, int height)
+    {
+        this->x = x;
+        this->y = y;
+        this->width = width;
+        this->height = height;
+        northWest = nullptr;
+        northEast = nullptr;
+        southWest = nullptr;
+        southEast = nullptr;
+        MaxPoints = 3;
+        divided = false;
+    }
+
+    void insert(Planet& point)
+    {
+        if(!divided)
+        {
+            if(points.size() < MaxPoints)
+            {
+                points.push_back(&point);
+            }
+            else
+            {
+                subdivide();
+                insert(point);
+            }
+        }
+        else
+        {
+            if(point.getPosition().x - point.getRadius() < x && point.getPosition().y - point.getRadius() < y)
+            {
+                northWest->insert(point);
+            }
+            if(point.getPosition().x + point.getRadius() > x && point.getPosition().y - point.getRadius() < y)
+            {
+                northEast->insert(point);
+            }
+            if(point.getPosition().x - point.getRadius() < x && point.getPosition().y + point.getRadius() > y)
+            {
+                southWest->insert(point);
+            }
+            if(point.getPosition().x + point.getRadius() > x && point.getPosition().y + point.getRadius() > y)
+            {
+                southEast->insert(point);
+            }
+        }
+    }
+
+    void subdivide()
+    {
+        northWest = new QuadTree(x - width/4, y - height/4, width/2, height/2);
+        northEast = new QuadTree(x + width/4, y - height/4, width/2, height/2);
+        southWest = new QuadTree(x - width/4, y + height/4, width/2, height/2);
+        southEast = new QuadTree(x + width/4, y + height/4, width/2, height/2);
+        divided = true;
+        for(int i = 0; i < points.size(); i++)
+        {
+            insert(*points[i]);
+        }
+        points.clear();
+    }
+
+    float getDistanceBetweenPlanets(Planet &planet1, Planet &planet2)
+    {
+        float xDistance = planet1.getPosition().x - planet2.getPosition().x;
+        float yDistance = planet1.getPosition().y - planet2.getPosition().y;
+        return sqrt(xDistance * xDistance + yDistance * yDistance);
+    }
+
+    void draw(RenderWindow &window)
+    {
+        
+        if(divided)
+        {
+            northWest->draw(window);
+            northEast->draw(window);
+            southWest->draw(window);
+            southEast->draw(window);
+        }
+        sf::Vertex line[] =
+        {
+            sf::Vertex(sf::Vector2f((x - width/2), (y - height/2))),
+            sf::Vertex(sf::Vector2f((x + width/2) + 1, (y - height/2))),
+            sf::Vertex(sf::Vector2f((x + width/2) + 1, (y + height/2) + 1)),
+            sf::Vertex(sf::Vector2f((x - width/2), (y + height/2) + 1)),
+            sf::Vertex(sf::Vector2f((x - width/2), (y + height/2) + 1)),
+            sf::Vertex(sf::Vector2f((x - width/2), (y - height/2))),
+        }; 
+        window.draw(line, 6, sf::Lines);
+    }
+
+    void printEveryNodeValue()
+    {
+        cout << "Node: " << this->toString() << endl;
+        cout << "Points: " << endl;
+        for(int i = 0; i < points.size(); i++)
+        {
+            cout << points[i]->toString() << endl;
+        }
+        cout << endl;
+
+        if(divided)
+        {
+            northWest->printEveryNodeValue();
+            northEast->printEveryNodeValue();
+            southWest->printEveryNodeValue();
+            southEast->printEveryNodeValue();
+        }
+    }
+
+    void WipeTree()
+    {
+        if(divided)
+        {
+            northWest->WipeTree();
+            northEast->WipeTree();
+            southWest->WipeTree();
+            southEast->WipeTree();
+            delete northWest;
+            delete northEast;
+            delete southWest;
+            delete southEast;
+        }
+        points.clear();
+        divided = false;
+    }
+
+
+    float angleBetweenRadians(Planet &planet1, Planet &planet2)
+    {
+        float x = planet1.getPosition().x - planet2.getPosition().x;
+        float y = planet1.getPosition().y - planet2.getPosition().y;
+
+        float angle = atan2(y, x);
+
+        return angle;
+    }
+    
+    void updateColorOfPlanetsInTree()
+    {
+        for(int i = 0; i < points.size(); i++)
+        {
+            points[i]->setFillColor(Color(255, 0, 0));
+        }
+        if(divided)
+        {
+            northWest->updateColorOfPlanetsInTree();
+            northEast->updateColorOfPlanetsInTree();
+            southWest->updateColorOfPlanetsInTree();
+            southEast->updateColorOfPlanetsInTree();
+        }
+    }
+
+    void checkForCollisions()
+    {
+        for(int i = 0; i < points.size(); i++)
+        {
+            for(int j = i + 1; j < points.size(); j++)
+            {
+                if(i != j)
+                {
+                    if(getDistanceBetweenPlanets(*points[i], *points[j]) < points[i]->getRadius() + points[j]->getRadius())
+                    {
+                        float distance = getDistanceBetweenPlanets(*points[i], *points[j]);
+                        float overlap = points[i]->getRadius() + points[j]->getRadius() - distance;
+                        float angle = angleBetweenRadians(*points[i], *points[j]);
+
+                        points[i]->setPosition(points[i]->getPosition().x + overlap * cos(angle), points[i]->getPosition().y + overlap * sin(angle));
+
+                        float Planet1xVelocity = (points[i]->getVelocity().x - ((2 * points[j]->getMass() / (points[i]->getMass() + points[j]->getMass())) * ((((points[i]->getVelocity().x - points[j]->getVelocity().x) * (points[i]->getPosition().x - points[j]->getPosition().x)) + ((points[i]->getVelocity().y - points[j]->getVelocity().y) * (points[i]->getPosition().y - points[j]->getPosition().y))) / (getDistanceBetweenPlanets(*points[i], *points[j]) * getDistanceBetweenPlanets(*points[i], *points[j]))) * (points[i]->getPosition().x - points[j]->getPosition().x)));
+                        float Planet1yVelocity = (points[i]->getVelocity().y - ((2 * points[j]->getMass() / (points[i]->getMass() + points[j]->getMass())) * ((((points[i]->getVelocity().x - points[j]->getVelocity().x) * (points[i]->getPosition().x - points[j]->getPosition().x)) + ((points[i]->getVelocity().y - points[j]->getVelocity().y) * (points[i]->getPosition().y - points[j]->getPosition().y))) / (getDistanceBetweenPlanets(*points[i], *points[j]) * getDistanceBetweenPlanets(*points[i], *points[j]))) * (points[i]->getPosition().y - points[j]->getPosition().y)));
+
+                        float Planet2xVelocity = (points[j]->getVelocity().x - ((2 * points[j]->getMass() / (points[i]->getMass() + points[j]->getMass())) * ((((points[j]->getVelocity().x - points[i]->getVelocity().x) * (points[j]->getPosition().x - points[i]->getPosition().x)) + ((points[j]->getVelocity().y - points[i]->getVelocity().y) * (points[j]->getPosition().y - points[i]->getPosition().y))) / (getDistanceBetweenPlanets(*points[i], *points[j]) * getDistanceBetweenPlanets(*points[i], *points[j]))) * (points[j]->getPosition().x - points[i]->getPosition().x)));
+                        float Planet2yVelocity = (points[j]->getVelocity().y - ((2 * points[j]->getMass() / (points[i]->getMass() + points[j]->getMass())) * ((((points[j]->getVelocity().x - points[i]->getVelocity().x) * (points[j]->getPosition().x - points[i]->getPosition().x)) + ((points[j]->getVelocity().y - points[i]->getVelocity().y) * (points[j]->getPosition().y - points[i]->getPosition().y))) / (getDistanceBetweenPlanets(*points[i], *points[j]) * getDistanceBetweenPlanets(*points[i], *points[j]))) * (points[j]->getPosition().y - points[i]->getPosition().y)));
+
+                        points[i]->setVelocity(Planet1xVelocity, Planet1yVelocity);
+                        points[j]->setVelocity(Planet2xVelocity, Planet2yVelocity);
+                    }
+                }
+            }
+        }
+        if(divided)
+        {
+            northWest->checkForCollisions();
+            northEast->checkForCollisions();
+            southWest->checkForCollisions();
+            southEast->checkForCollisions();
+        }
+    }
+
+    string toString()
+    {
+        return "(" + to_string(x) + ", " + to_string(y) + ")";
+    }
+};
+
 
 int main()
 {
-    SolarSystem solarSystem(100);
+    SolarSystem solarSystem(8);
 
-    solarSystem.setRadiusOfallPlanets(15);
+    solarSystem.setRadiusOfallPlanets(10);
     solarSystem.randomizePositionOfPlnats();
     solarSystem.setPlanetsRandomColor();
-    solarSystem.setMassOfAllPlanets(1000);
-    UniformGrid UniformGrid(3,3);
+    solarSystem.setMassOfAllPlanets(10000);
+    UniformGrid UniformGrid(8,8);
     RenderWindow window(VideoMode(screenWidth, screenHeight), "SIM");
+
+    QuadTree tree(screenWidth/2, screenHeight/2, screenWidth, screenHeight);
 
     Clock clock;
 
@@ -547,11 +782,24 @@ int main()
         window.setTitle("SIM - FPS: " + to_string(fps));
 
         
-        solarSystem.updateAllForcees(deltaTime, UniformGrid);
+
+        tree.WipeTree();
+
+        for(int i = 0; i < solarSystem.planets.size(); i++)
+        {
+            tree.insert(solarSystem.planets[i]);
+        }
+
+        tree.checkForCollisions();
+
+        // solarSystem.updateForcesDueToGravity(deltaTime);
+        
+        solarSystem.updateForcesDueToWindowEdges();
+        
         solarSystem.updatePlanetsPosition(deltaTime);
 
         window.clear();
-        UniformGrid.draw(window);
+        tree.draw(window);
         solarSystem.draw(window);
         window.display();
     }
